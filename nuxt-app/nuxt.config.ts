@@ -8,8 +8,11 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxtjs/i18n'
   ],
+  nitro: {
+    preset: 'netlify'
+  },
   devtools: {
-    enabled: false
+    enabled: false,
   },
   css: ['~/assets/css/main.css'],
   i18n: {
@@ -29,7 +32,7 @@ export default defineNuxtConfig({
     ]
   },
   routeRules: {
-    '/': { prerender: false }
+    '/': { prerender: true }
   },
 
   compatibilityDate: '2025-01-15',
