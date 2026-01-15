@@ -1,33 +1,21 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
-    '@nuxt/eslint',
     '@nuxt/ui',
+    '@nuxt/eslint',
     '@nuxt/hints',
     '@nuxt/image',
     '@nuxt/scripts',
   ],
-  css: ['~/assets/css/main.css'],
-  routeRules: {
-    '/': { prerender: true }
+  css: ['@/assets/css/main.css'],
+  nitro: {
+    prerender: {
+      routes: [
+        '/'
+      ],
+      crawlLinks: true
+    }
   },
-  i18n: {
-    defaultDirection: "ltr",
-    defaultLocale: "en",
-    prefix_except_default: false,
-    locales: [{
-        code: 'en',
-        name: 'English'
-      },{
-        code: 'ru',
-        name: 'Russian'
-      },{
-        code: 'uz',
-        name: 'Uzbek'
-      }
-    ]
-  },
-
   compatibilityDate: '2025-01-15',
 
   eslint: {
