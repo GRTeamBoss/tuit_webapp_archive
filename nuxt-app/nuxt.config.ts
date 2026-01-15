@@ -8,13 +8,10 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxtjs/i18n'
   ],
-
   devtools: {
-    enabled: true
+    enabled: false
   },
-
   css: ['~/assets/css/main.css'],
-
   i18n: {
     defaultDirection: "ltr",
     defaultLocale: "en",
@@ -31,9 +28,8 @@ export default defineNuxtConfig({
       }
     ]
   },
-
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: false }
   },
 
   compatibilityDate: '2025-01-15',
