@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n'
   ],
   nitro: {
-    preset: 'netlify'
+    preset: 'netlify-builder'
   },
   $production: {
     routeRules: {
