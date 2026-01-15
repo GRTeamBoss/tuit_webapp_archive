@@ -75,12 +75,12 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
-const { getBooks, getPosts, getDissertations } = await useUnilibrary();
-const books = await getBooks(1);
+
+const books = await useFetch("/api/unilibrary/books?page=1");
 const booksData = books.result.data;
-const posts = await getPosts(1);
+const posts = await useFetch("/api/unilibrary/posts?page=1");
 const postsData = posts.result.data;
-const dissertations = await getDissertations(1);
+const dissertations = await useFetch("/api/unilibrary/dissertations?page=1");
 const dissertationsData = dissertations.result.data;
 const items: NavigationMenuItem[] = ref<NavigationMenuItem[][]>([
   [

@@ -35,10 +35,9 @@ const books = ref([
   },
 ]);
 const searchTerm = ref("");
-const { searchLib } = await useSearch();
 
 const setBooks = async (name: string) => {
-  const data = await searchLib(name);
+  const data = await useFetch(`/api/unilibrary/search?name=${name}`);
   books.value[0].items = [];
   data.result.data.forEach((book) => {
     books.value[0]?.items.push({
