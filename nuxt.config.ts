@@ -11,6 +11,12 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'netlify'
   },
+  $production: {
+    routeRules: {
+      '/**': { isr: true},
+    }
+  },
+  ssr: false,
   devtools: {
     enabled: false,
   },
