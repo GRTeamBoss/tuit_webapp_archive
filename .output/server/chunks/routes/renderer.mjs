@@ -1,5 +1,5 @@
 import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'vue-bundle-renderer/runtime';
-import { b as buildAssetsURL, a as appRootTag, c as appRootAttrs, d as appSpaLoaderTag, e as appSpaLoaderAttrs, u as useRuntimeConfig, g as getResponseStatusText, f as getResponseStatus, h as appId, i as defineRenderHandler, p as publicAssetsURL, j as appTeleportTag, k as appTeleportAttrs, l as getQuery, m as createError, n as appHead, o as destr, q as getRouteRules, r as useNitroApp } from '../nitro/nitro.mjs';
+import { b as buildAssetsURL, u as useRuntimeConfig, g as getResponseStatusText, a as getResponseStatus, d as defineRenderHandler, p as publicAssetsURL, c as getQuery, e as createError, f as destr, h as getRouteRules, i as useNitroApp } from '../nitro/nitro.mjs';
 import { renderToString } from 'vue/server-renderer';
 import { createHead as createHead$1, propsToString, renderSSRHead } from 'unhead/server';
 import { stringify, uneval } from 'devalue';
@@ -84,6 +84,22 @@ function createHead(options = {}) {
   head.install = vueInstall(head);
   return head;
 }
+
+const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[],"style":[],"script":[],"noscript":[]};
+
+const appRootTag = "div";
+
+const appRootAttrs = {"id":"__nuxt","class":"isolate"};
+
+const appTeleportTag = "div";
+
+const appTeleportAttrs = {"id":"teleports"};
+
+const appSpaLoaderTag = "div";
+
+const appSpaLoaderAttrs = {"id":"__nuxt-loader"};
+
+const appId = "nuxt-app";
 
 const APP_ROOT_OPEN_TAG = `<${appRootTag}${propsToString(appRootAttrs)}>`;
 const APP_ROOT_CLOSE_TAG = `</${appRootTag}>`;

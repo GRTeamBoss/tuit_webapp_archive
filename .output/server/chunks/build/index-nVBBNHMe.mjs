@@ -1,5 +1,5 @@
 import { _ as _sfc_main$3, a as _sfc_main$2, b as _sfc_main$1 } from './PageSection-Dq2HFK-8.mjs';
-import { _ as _sfc_main$4 } from './NavigationMenu-CxeNosdr.mjs';
+import { _ as _sfc_main$4 } from './NavigationMenu-1dMkt1qq.mjs';
 import { defineComponent, ref, withCtx, unref, createVNode, useSSRContext } from 'vue';
 import { ssrRenderComponent } from 'vue/server-renderer';
 import 'reka-ui';
@@ -12,11 +12,11 @@ import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
-import 'vue-router';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
 import 'ipx';
+import 'vue-router';
 import 'tailwindcss/colors';
 import '@iconify/vue';
 import '@vueuse/core';
@@ -110,4 +110,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=index-ugIusHsh.mjs.map
+//# sourceMappingURL=index-nVBBNHMe.mjs.map

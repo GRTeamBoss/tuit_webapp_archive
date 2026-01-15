@@ -5,7 +5,6 @@ import { Buffer as Buffer$1 } from 'node:buffer';
 import { promises, existsSync } from 'node:fs';
 import { resolve as resolve$1, dirname as dirname$1, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { createRouterMatcher } from 'vue-router';
 import { fileURLToPath } from 'node:url';
 import { getIcons } from '@iconify/utils';
 import { consola } from 'consola';
@@ -106,7 +105,7 @@ function encodePath(text) {
 function encodeParam(text) {
   return encodePath(text).replace(SLASH_RE, "%2F");
 }
-function decode$1(text = "") {
+function decode(text = "") {
   try {
     return decodeURIComponent("" + text);
   } catch {
@@ -114,13 +113,13 @@ function decode$1(text = "") {
   }
 }
 function decodePath(text) {
-  return decode$1(text.replace(ENC_SLASH_RE, "%252F"));
+  return decode(text.replace(ENC_SLASH_RE, "%252F"));
 }
 function decodeQueryKey(text) {
-  return decode$1(text.replace(PLUS_RE, " "));
+  return decode(text.replace(PLUS_RE, " "));
 }
 function decodeQueryValue(text) {
-  return decode$1(text.replace(PLUS_RE, " "));
+  return decode(text.replace(PLUS_RE, " "));
 }
 
 function parseQuery(parametersString = "") {
@@ -326,21 +325,6 @@ function joinRelativeURL(..._input) {
   }
   return url;
 }
-function isEqual$1(a, b, options = {}) {
-  if (!options.trailingSlash) {
-    a = withTrailingSlash(a);
-    b = withTrailingSlash(b);
-  }
-  if (!options.leadingSlash) {
-    a = withLeadingSlash(a);
-    b = withLeadingSlash(b);
-  }
-  if (!options.encoding) {
-    a = decode$1(a);
-    b = decode$1(b);
-  }
-  return a === b;
-}
 
 const protocolRelative = Symbol.for("ufo:protocolRelative");
 function parseURL(input = "", defaultProto) {
@@ -394,211 +378,6 @@ function stringifyParsedURL(parsed) {
   const host = parsed.host || "";
   const proto = parsed.protocol || parsed[protocolRelative] ? (parsed.protocol || "") + "//" : "";
   return proto + auth + host + pathname + search + hash;
-}
-
-function parse(str, options) {
-  if (typeof str !== "string") {
-    throw new TypeError("argument str must be a string");
-  }
-  const obj = {};
-  const opt = {};
-  const dec = opt.decode || decode;
-  let index = 0;
-  while (index < str.length) {
-    const eqIdx = str.indexOf("=", index);
-    if (eqIdx === -1) {
-      break;
-    }
-    let endIdx = str.indexOf(";", index);
-    if (endIdx === -1) {
-      endIdx = str.length;
-    } else if (endIdx < eqIdx) {
-      index = str.lastIndexOf(";", eqIdx - 1) + 1;
-      continue;
-    }
-    const key = str.slice(index, eqIdx).trim();
-    if (opt?.filter && !opt?.filter(key)) {
-      index = endIdx + 1;
-      continue;
-    }
-    if (void 0 === obj[key]) {
-      let val = str.slice(eqIdx + 1, endIdx).trim();
-      if (val.codePointAt(0) === 34) {
-        val = val.slice(1, -1);
-      }
-      obj[key] = tryDecode(val, dec);
-    }
-    index = endIdx + 1;
-  }
-  return obj;
-}
-function decode(str) {
-  return str.includes("%") ? decodeURIComponent(str) : str;
-}
-function tryDecode(str, decode2) {
-  try {
-    return decode2(str);
-  } catch {
-    return str;
-  }
-}
-
-const fieldContentRegExp = /^[\u0009\u0020-\u007E\u0080-\u00FF]+$/;
-function serialize$2(name, value, options) {
-  const opt = options || {};
-  const enc = opt.encode || encodeURIComponent;
-  if (typeof enc !== "function") {
-    throw new TypeError("option encode is invalid");
-  }
-  if (!fieldContentRegExp.test(name)) {
-    throw new TypeError("argument name is invalid");
-  }
-  const encodedValue = enc(value);
-  if (encodedValue && !fieldContentRegExp.test(encodedValue)) {
-    throw new TypeError("argument val is invalid");
-  }
-  let str = name + "=" + encodedValue;
-  if (void 0 !== opt.maxAge && opt.maxAge !== null) {
-    const maxAge = opt.maxAge - 0;
-    if (Number.isNaN(maxAge) || !Number.isFinite(maxAge)) {
-      throw new TypeError("option maxAge is invalid");
-    }
-    str += "; Max-Age=" + Math.floor(maxAge);
-  }
-  if (opt.domain) {
-    if (!fieldContentRegExp.test(opt.domain)) {
-      throw new TypeError("option domain is invalid");
-    }
-    str += "; Domain=" + opt.domain;
-  }
-  if (opt.path) {
-    if (!fieldContentRegExp.test(opt.path)) {
-      throw new TypeError("option path is invalid");
-    }
-    str += "; Path=" + opt.path;
-  }
-  if (opt.expires) {
-    if (!isDate(opt.expires) || Number.isNaN(opt.expires.valueOf())) {
-      throw new TypeError("option expires is invalid");
-    }
-    str += "; Expires=" + opt.expires.toUTCString();
-  }
-  if (opt.httpOnly) {
-    str += "; HttpOnly";
-  }
-  if (opt.secure) {
-    str += "; Secure";
-  }
-  if (opt.priority) {
-    const priority = typeof opt.priority === "string" ? opt.priority.toLowerCase() : opt.priority;
-    switch (priority) {
-      case "low": {
-        str += "; Priority=Low";
-        break;
-      }
-      case "medium": {
-        str += "; Priority=Medium";
-        break;
-      }
-      case "high": {
-        str += "; Priority=High";
-        break;
-      }
-      default: {
-        throw new TypeError("option priority is invalid");
-      }
-    }
-  }
-  if (opt.sameSite) {
-    const sameSite = typeof opt.sameSite === "string" ? opt.sameSite.toLowerCase() : opt.sameSite;
-    switch (sameSite) {
-      case true: {
-        str += "; SameSite=Strict";
-        break;
-      }
-      case "lax": {
-        str += "; SameSite=Lax";
-        break;
-      }
-      case "strict": {
-        str += "; SameSite=Strict";
-        break;
-      }
-      case "none": {
-        str += "; SameSite=None";
-        break;
-      }
-      default: {
-        throw new TypeError("option sameSite is invalid");
-      }
-    }
-  }
-  if (opt.partitioned) {
-    str += "; Partitioned";
-  }
-  return str;
-}
-function isDate(val) {
-  return Object.prototype.toString.call(val) === "[object Date]" || val instanceof Date;
-}
-
-function parseSetCookie(setCookieValue, options) {
-  const parts = (setCookieValue || "").split(";").filter((str) => typeof str === "string" && !!str.trim());
-  const nameValuePairStr = parts.shift() || "";
-  const parsed = _parseNameValuePair(nameValuePairStr);
-  const name = parsed.name;
-  let value = parsed.value;
-  try {
-    value = options?.decode === false ? value : (options?.decode || decodeURIComponent)(value);
-  } catch {
-  }
-  const cookie = {
-    name,
-    value
-  };
-  for (const part of parts) {
-    const sides = part.split("=");
-    const partKey = (sides.shift() || "").trimStart().toLowerCase();
-    const partValue = sides.join("=");
-    switch (partKey) {
-      case "expires": {
-        cookie.expires = new Date(partValue);
-        break;
-      }
-      case "max-age": {
-        cookie.maxAge = Number.parseInt(partValue, 10);
-        break;
-      }
-      case "secure": {
-        cookie.secure = true;
-        break;
-      }
-      case "httponly": {
-        cookie.httpOnly = true;
-        break;
-      }
-      case "samesite": {
-        cookie.sameSite = partValue;
-        break;
-      }
-      default: {
-        cookie[partKey] = partValue;
-      }
-    }
-  }
-  return cookie;
-}
-function _parseNameValuePair(nameValuePairStr) {
-  let name = "";
-  let value = "";
-  const nameValueArr = nameValuePairStr.split("=");
-  if (nameValueArr.length > 1) {
-    name = nameValueArr.shift();
-    value = nameValueArr.join("=");
-  } else {
-    value = nameValuePairStr;
-  }
-  return { name, value };
 }
 
 const NODE_TYPES = {
@@ -1031,20 +810,6 @@ function isError(input) {
 function getQuery(event) {
   return getQuery$1(event.path || "");
 }
-function getRouterParams(event, opts = {}) {
-  let params = event.context.params || {};
-  if (opts.decode) {
-    params = { ...params };
-    for (const key in params) {
-      params[key] = decode$1(params[key]);
-    }
-  }
-  return params;
-}
-function getRouterParam(event, name, opts = {}) {
-  const params = getRouterParams(event, opts);
-  return params[name];
-}
 function isMethod(event, expected, allowHead) {
   if (typeof expected === "string") {
     if (event.method === expected) {
@@ -1257,47 +1022,6 @@ function sanitizeStatusCode(statusCode, defaultStatusCode = 200) {
     return defaultStatusCode;
   }
   return statusCode;
-}
-
-function getDistinctCookieKey(name, opts) {
-  return [name, opts.domain || "", opts.path || "/"].join(";");
-}
-
-function parseCookies(event) {
-  return parse(event.node.req.headers.cookie || "");
-}
-function getCookie(event, name) {
-  return parseCookies(event)[name];
-}
-function setCookie(event, name, value, serializeOptions = {}) {
-  if (!serializeOptions.path) {
-    serializeOptions = { path: "/", ...serializeOptions };
-  }
-  const newCookie = serialize$2(name, value, serializeOptions);
-  const currentCookies = splitCookiesString(
-    event.node.res.getHeader("set-cookie")
-  );
-  if (currentCookies.length === 0) {
-    event.node.res.setHeader("set-cookie", newCookie);
-    return;
-  }
-  const newCookieKey = getDistinctCookieKey(name, serializeOptions);
-  event.node.res.removeHeader("set-cookie");
-  for (const cookie of currentCookies) {
-    const parsed = parseSetCookie(cookie);
-    const key = getDistinctCookieKey(parsed.name, parsed);
-    if (key === newCookieKey) {
-      continue;
-    }
-    event.node.res.appendHeader("set-cookie", cookie);
-  }
-  event.node.res.appendHeader("set-cookie", newCookie);
-}
-function deleteCookie(event, name, serializeOptions) {
-  setCookie(event, name, "", {
-    ...serializeOptions,
-    maxAge: 0
-  });
 }
 function splitCookiesString(cookiesString) {
   if (Array.isArray(cookiesString)) {
@@ -3596,14 +3320,14 @@ const unstorage_47drivers_47fs_45lite = defineDriver((opts = {}) => {
   };
 });
 
-const storage$1 = createStorage({});
+const storage = createStorage({});
 
-storage$1.mount('/assets', assets$1);
+storage.mount('/assets', assets$1);
 
-storage$1.mount('data', unstorage_47drivers_47fs_45lite({"driver":"fsLite","base":"./.data/kv"}));
+storage.mount('data', unstorage_47drivers_47fs_45lite({"driver":"fsLite","base":"./.data/kv"}));
 
 function useStorage(base = "") {
-  return base ? prefixStorage(storage$1, base) : storage$1;
+  return base ? prefixStorage(storage, base) : storage;
 }
 
 function serialize$1(o){return typeof o=="string"?`'${o}'`:new c().serialize(o)}const c=/*@__PURE__*/function(){class o{#t=new Map;compare(t,r){const e=typeof t,n=typeof r;return e==="string"&&n==="string"?t.localeCompare(r):e==="number"&&n==="number"?t-r:String.prototype.localeCompare.call(this.serialize(t,true),this.serialize(r,true))}serialize(t,r){if(t===null)return "null";switch(typeof t){case "string":return r?t:`'${t}'`;case "bigint":return `${t}n`;case "object":return this.$object(t);case "function":return this.$function(t)}return String(t)}serializeObject(t){const r=Object.prototype.toString.call(t);if(r!=="[object Object]")return this.serializeBuiltInType(r.length<10?`unknown:${r}`:r.slice(8,-1),t);const e=t.constructor,n=e===Object||e===void 0?"":e.name;if(n!==""&&globalThis[n]===e)return this.serializeBuiltInType(n,t);if(typeof t.toJSON=="function"){const i=t.toJSON();return n+(i!==null&&typeof i=="object"?this.$object(i):`(${this.serialize(i)})`)}return this.serializeObjectEntries(n,Object.entries(t))}serializeBuiltInType(t,r){const e=this["$"+t];if(e)return e.call(this,r);if(typeof r?.entries=="function")return this.serializeObjectEntries(t,r.entries());throw new Error(`Cannot serialize ${t}`)}serializeObjectEntries(t,r){const e=Array.from(r).sort((i,a)=>this.compare(i[0],a[0]));let n=`${t}{`;for(let i=0;i<e.length;i++){const[a,l]=e[i];n+=`${this.serialize(a,true)}:${this.serialize(l)}`,i<e.length-1&&(n+=",");}return n+"}"}$object(t){let r=this.#t.get(t);return r===void 0&&(this.#t.set(t,`#${this.#t.size}`),r=this.serializeObject(t),this.#t.set(t,r)),r}$function(t){const r=Function.prototype.toString.call(t);return r.slice(-15)==="[native code] }"?`${t.name||""}()[native]`:`${t.name}(${t.length})${r.replace(/\s*\n\s*/g,"")}`}$Array(t){let r="[";for(let e=0;e<t.length;e++)r+=this.serialize(t[e]),e<t.length-1&&(r+=",");return r+"]"}$Date(t){try{return `Date(${t.toISOString()})`}catch{return "Date(null)"}}$ArrayBuffer(t){return `ArrayBuffer[${new Uint8Array(t).join(",")}]`}$Set(t){return `Set${this.$Array(Array.from(t).sort((r,e)=>this.compare(r,e)))}`}$Map(t){return this.serializeObjectEntries("Map",t.entries())}}for(const s of ["Error","RegExp","URL"])o.prototype["$"+s]=function(t){return `${s}(${t})`};for(const s of ["Int8Array","Uint8Array","Uint8ClampedArray","Int16Array","Uint16Array","Int32Array","Uint32Array","Float32Array","Float64Array"])o.prototype["$"+s]=function(t){return `${s}[${t.join(",")}]`};for(const s of ["BigInt64Array","BigUint64Array"])o.prototype["$"+s]=function(t){return `${s}[${t.join("n,")}${t.length>0?"n":""}]`};return o}();
@@ -4633,7 +4357,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "3ce60f67-427c-4082-a8f6-dfd5c3a04abe",
+    "buildId": "01907867-f1a7-424e-8839-4e334fb7bbf3",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4678,64 +4402,6 @@ const _inlineRuntimeConfig = {
       "version": "",
       "defaultScriptOptions": {
         "trigger": "onNuxtReady"
-      }
-    },
-    "i18n": {
-      "baseUrl": "",
-      "defaultLocale": "en",
-      "rootRedirect": "",
-      "redirectStatusCode": 302,
-      "skipSettingLocaleOnNavigate": false,
-      "locales": [
-        {
-          "code": "en",
-          "name": "English",
-          "language": ""
-        },
-        {
-          "code": "ru",
-          "name": "Russian",
-          "language": ""
-        },
-        {
-          "code": "uz",
-          "name": "Uzbek",
-          "language": ""
-        }
-      ],
-      "detectBrowserLanguage": {
-        "alwaysRedirect": false,
-        "cookieCrossOrigin": false,
-        "cookieDomain": "",
-        "cookieKey": "i18n_redirected",
-        "cookieSecure": false,
-        "fallbackLocale": "",
-        "redirectOn": "root",
-        "useCookie": true
-      },
-      "experimental": {
-        "localeDetector": "",
-        "typedPages": true,
-        "typedOptionsAndMessages": false,
-        "alternateLinkCanonicalQueries": true,
-        "devCache": false,
-        "cacheLifetime": "",
-        "stripMessagesPayload": false,
-        "preload": false,
-        "strictSeo": false,
-        "nitroContextDetection": true,
-        "httpCacheDuration": 10
-      },
-      "domainLocales": {
-        "en": {
-          "domain": ""
-        },
-        "ru": {
-          "domain": ""
-        },
-        "uz": {
-          "domain": ""
-        }
       }
     }
   },
@@ -5172,866 +4838,235 @@ async function errorHandler(error, event) {
   // H3 will handle fallback
 }
 
-/*!
-  * shared v11.2.8
-  * (c) 2025 kazuya kawaguchi
-  * Released under the MIT License.
-  */
-const _create = Object.create;
-const create = (obj = null) => _create(obj);
-/* eslint-enable */
-/**
- * Useful Utilities By Evan you
- * Modified by kazuya kawaguchi
- * MIT License
- * https://github.com/vuejs/vue-next/blob/master/packages/shared/src/index.ts
- * https://github.com/vuejs/vue-next/blob/master/packages/shared/src/codeframe.ts
- */
-const isArray = Array.isArray;
-const isFunction = (val) => typeof val === 'function';
-const isString = (val) => typeof val === 'string';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isObject = (val) => val !== null && typeof val === 'object';
-const objectToString = Object.prototype.toString;
-const toTypeString = (value) => objectToString.call(value);
-
-const isNotObjectOrIsArray = (val) => !isObject(val) || isArray(val);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function deepCopy(src, des) {
-    // src and des should both be objects, and none of them can be a array
-    if (isNotObjectOrIsArray(src) || isNotObjectOrIsArray(des)) {
-        throw new Error('Invalid value');
-    }
-    const stack = [{ src, des }];
-    while (stack.length) {
-        const { src, des } = stack.pop();
-        // using `Object.keys` which skips prototype properties
-        Object.keys(src).forEach(key => {
-            if (key === '__proto__') {
-                return;
-            }
-            // if src[key] is an object/array, set des[key]
-            // to empty object/array to prevent setting by reference
-            if (isObject(src[key]) && !isObject(des[key])) {
-                des[key] = Array.isArray(src[key]) ? [] : create();
-            }
-            if (isNotObjectOrIsArray(des[key]) || isNotObjectOrIsArray(src[key])) {
-                // replace with src[key] when:
-                // src[key] or des[key] is not an object, or
-                // src[key] or des[key] is an array
-                des[key] = src[key];
-            }
-            else {
-                // src[key] and des[key] are both objects, merge them
-                stack.push({ src: src[key], des: des[key] });
-            }
-        });
-    }
-}
-
-const __nuxtMock = { runWithContext: async (fn) => await fn() };
-const merger = createDefu((obj, key, value) => {
-  if (key === "messages" || key === "datetimeFormats" || key === "numberFormats") {
-    obj[key] ??= create(null);
-    deepCopy(value, obj[key]);
-    return true;
-  }
-});
-async function loadVueI18nOptions(vueI18nConfigs) {
-  const nuxtApp = __nuxtMock;
-  let vueI18nOptions = { messages: create(null) };
-  for (const configFile of vueI18nConfigs) {
-    const resolver = await configFile().then((x) => x.default);
-    const resolved = isFunction(resolver) ? await nuxtApp.runWithContext(() => resolver()) : resolver;
-    vueI18nOptions = merger(create(null), resolved, vueI18nOptions);
-  }
-  vueI18nOptions.fallbackLocale ??= false;
-  return vueI18nOptions;
-}
-const isModule = (val) => toTypeString(val) === "[object Module]";
-const isResolvedModule = (val) => isModule(val) || true;
-async function getLocaleMessages(locale, loader) {
-  const nuxtApp = __nuxtMock;
-  try {
-    const getter = await nuxtApp.runWithContext(loader.load).then((x) => isResolvedModule(x) ? x.default : x);
-    return isFunction(getter) ? await nuxtApp.runWithContext(() => getter(locale)) : getter;
-  } catch (e) {
-    throw new Error(`Failed loading locale (${locale}): ` + e.message);
-  }
-}
-async function getLocaleMessagesMerged(locale, loaders = []) {
-  const nuxtApp = __nuxtMock;
-  const messages = await Promise.all(
-    loaders.map((loader) => nuxtApp.runWithContext(() => getLocaleMessages(locale, loader)))
-  );
-  const merged = {};
-  for (const message of messages) {
-    deepCopy(message, merged);
-  }
-  return merged;
-}
-
-// @ts-nocheck
-const localeCodes =  [
-  "en",
-  "ru",
-  "uz"
-];
-const localeLoaders = {
-  en: [],
-  ru: [],
-  uz: []
-};
-const vueI18nConfigs = [];
-const normalizedLocales = [
-  {
-    code: "en",
-    name: "English",
-    language: undefined
-  },
-  {
-    code: "ru",
-    name: "Russian",
-    language: undefined
-  },
-  {
-    code: "uz",
-    name: "Uzbek",
-    language: undefined
-  }
-];
-
-const setupVueI18nOptions = async (defaultLocale) => {
-  const options = await loadVueI18nOptions(vueI18nConfigs);
-  options.locale = defaultLocale || options.locale || "en-US";
-  options.defaultLocale = defaultLocale;
-  options.fallbackLocale ??= false;
-  options.messages ??= {};
-  for (const locale of localeCodes) {
-    options.messages[locale] ??= {};
-  }
-  return options;
-};
-
-function defineNitroPlugin(def) {
-  return def;
-}
-
-function defineRenderHandler(render) {
-  const runtimeConfig = useRuntimeConfig();
-  return eventHandler(async (event) => {
-    const nitroApp = useNitroApp();
-    const ctx = { event, render, response: void 0 };
-    await nitroApp.hooks.callHook("render:before", ctx);
-    if (!ctx.response) {
-      if (event.path === `${runtimeConfig.app.baseURL}favicon.ico`) {
-        setResponseHeader(event, "Content-Type", "image/x-icon");
-        return send(
-          event,
-          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-        );
-      }
-      ctx.response = await ctx.render(event);
-      if (!ctx.response) {
-        const _currentStatus = getResponseStatus(event);
-        setResponseStatus(event, _currentStatus === 200 ? 500 : _currentStatus);
-        return send(
-          event,
-          "No response returned from render handler: " + event.path
-        );
-      }
-    }
-    await nitroApp.hooks.callHook("render:response", ctx.response, ctx);
-    if (ctx.response.headers) {
-      setResponseHeaders(event, ctx.response.headers);
-    }
-    if (ctx.response.statusCode || ctx.response.statusMessage) {
-      setResponseStatus(
-        event,
-        ctx.response.statusCode,
-        ctx.response.statusMessage
-      );
-    }
-    return ctx.response.body;
-  });
-}
-
-function baseURL() {
-  return useRuntimeConfig().app.baseURL;
-}
-function buildAssetsDir() {
-  return useRuntimeConfig().app.buildAssetsDir;
-}
-function buildAssetsURL(...path) {
-  return joinRelativeURL(publicAssetsURL(), buildAssetsDir(), ...path);
-}
-function publicAssetsURL(...path) {
-  const app = useRuntimeConfig().app;
-  const publicBase = app.cdnURL || app.baseURL;
-  return path.length ? joinRelativeURL(publicBase, ...path) : publicBase;
-}
-
-function parseAcceptLanguage(value) {
-  return value.split(",").map((tag) => tag.split(";")[0]).filter(
-    (tag) => !(tag === "*" || tag === "")
-  );
-}
-function createPathIndexLanguageParser(index = 0) {
-  return (path) => {
-    const rawPath = typeof path === "string" ? path : path.pathname;
-    const normalizedPath = rawPath.split("?")[0];
-    const parts = normalizedPath.split("/");
-    if (parts[0] === "") {
-      parts.shift();
-    }
-    return parts.length > index ? parts[index] || "" : "";
-  };
-}
-
-function useRuntimeI18n(nuxtApp, event) {
-  {
-    return useRuntimeConfig(event).public.i18n;
-  }
-}
-function useI18nDetection(nuxtApp) {
-  const detectBrowserLanguage = useRuntimeI18n().detectBrowserLanguage;
-  const detect = detectBrowserLanguage || {};
-  return {
-    ...detect,
-    enabled: !!detectBrowserLanguage,
-    cookieKey: detect.cookieKey || "i18n_redirected"
-  };
-}
-function resolveRootRedirect(config) {
-  if (!config) {
-    return void 0;
-  }
-  return {
-    path: "/" + (isString(config) ? config : config.path).replace(/^\//, ""),
-    code: !isString(config) && config.statusCode || 302
-  };
-}
-function toArray(value) {
-  return Array.isArray(value) ? value : [value];
-}
-
-function createLocaleConfigs(fallbackLocale) {
-  const localeConfigs = {};
-  for (const locale of localeCodes) {
-    const fallbacks = getFallbackLocaleCodes(fallbackLocale, [locale]);
-    const cacheable = isLocaleWithFallbacksCacheable(locale, fallbacks);
-    localeConfigs[locale] = { fallbacks, cacheable };
-  }
-  return localeConfigs;
-}
-function getFallbackLocaleCodes(fallback, locales) {
-  if (fallback === false) {
-    return [];
-  }
-  if (isArray(fallback)) {
-    return fallback;
-  }
-  let fallbackLocales = [];
-  if (isString(fallback)) {
-    if (locales.every((locale) => locale !== fallback)) {
-      fallbackLocales.push(fallback);
-    }
-    return fallbackLocales;
-  }
-  const targets = [...locales, "default"];
-  for (const locale of targets) {
-    if (locale in fallback == false) {
-      continue;
-    }
-    fallbackLocales = [...fallbackLocales, ...fallback[locale].filter(Boolean)];
-  }
-  return fallbackLocales;
-}
-function isLocaleCacheable(locale) {
-  return localeLoaders[locale] != null && localeLoaders[locale].every((loader) => loader.cache !== false);
-}
-function isLocaleWithFallbacksCacheable(locale, fallbackLocales) {
-  return isLocaleCacheable(locale) && fallbackLocales.every((fallbackLocale) => isLocaleCacheable(fallbackLocale));
-}
-function getDefaultLocaleForDomain(host) {
-  return normalizedLocales.find((l) => !!l.defaultForDomains?.includes(host))?.code;
-}
-const isSupportedLocale = (locale) => localeCodes.includes(locale || "");
-
-function useI18nContext(event) {
-  if (event.context.nuxtI18n == null) {
-    throw new Error("Nuxt I18n server context has not been set up yet.");
-  }
-  return event.context.nuxtI18n;
-}
-function tryUseI18nContext(event) {
-  return event.context.nuxtI18n;
-}
-const getHost = (event) => getRequestURL(event, { xForwardedHost: true }).host;
-async function initializeI18nContext(event) {
-  const runtimeI18n = useRuntimeI18n(void 0, event);
-  const defaultLocale = runtimeI18n.defaultLocale || "";
-  const options = await setupVueI18nOptions(getDefaultLocaleForDomain(getHost(event)) || defaultLocale);
-  const localeConfigs = createLocaleConfigs(options.fallbackLocale);
-  const ctx = createI18nContext();
-  ctx.vueI18nOptions = options;
-  ctx.localeConfigs = localeConfigs;
-  event.context.nuxtI18n = ctx;
-  return ctx;
-}
-function createI18nContext() {
-  return {
-    messages: {},
-    slp: {},
-    localeConfigs: {},
-    trackMap: {},
-    vueI18nOptions: void 0,
-    trackKey(key, locale) {
-      this.trackMap[locale] ??= /* @__PURE__ */ new Set();
-      this.trackMap[locale].add(key);
-    }
-  };
-}
-
-function matchBrowserLocale(locales, browserLocales) {
-  const matchedLocales = [];
-  for (const [index, browserCode] of browserLocales.entries()) {
-    const matchedLocale = locales.find((l) => l.language?.toLowerCase() === browserCode.toLowerCase());
-    if (matchedLocale) {
-      matchedLocales.push({ code: matchedLocale.code, score: 1 - index / browserLocales.length });
-      break;
-    }
-  }
-  for (const [index, browserCode] of browserLocales.entries()) {
-    const languageCode = browserCode.split("-")[0].toLowerCase();
-    const matchedLocale = locales.find((l) => l.language?.split("-")[0].toLowerCase() === languageCode);
-    if (matchedLocale) {
-      matchedLocales.push({ code: matchedLocale.code, score: 0.999 - index / browserLocales.length });
-      break;
-    }
-  }
-  return matchedLocales;
-}
-function compareBrowserLocale(a, b) {
-  if (a.score === b.score) {
-    return b.code.length - a.code.length;
-  }
-  return b.score - a.score;
-}
-function findBrowserLocale(locales, browserLocales) {
-  const matchedLocales = matchBrowserLocale(
-    locales.map((l) => ({ code: l.code, language: l.language || l.code })),
-    browserLocales
-  );
-  return matchedLocales.sort(compareBrowserLocale).at(0)?.code ?? "";
-}
-
-const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[],"style":[],"script":[],"noscript":[]};
-
-const appRootTag = "div";
-
-const appRootAttrs = {"id":"__nuxt","class":"isolate"};
-
-const appTeleportTag = "div";
-
-const appTeleportAttrs = {"id":"teleports"};
-
-const appSpaLoaderTag = "div";
-
-const appSpaLoaderAttrs = {"id":"__nuxt-loader"};
-
-const appId = "nuxt-app";
-
-const separator = "___";
-const pathLanguageParser = createPathIndexLanguageParser(0);
-const getLocaleFromRoutePath = (path) => pathLanguageParser(path);
-const getLocaleFromRouteName = (name) => name.split(separator).at(1) ?? "";
-function normalizeInput(input) {
-  return typeof input !== "object" ? String(input) : String(input?.name || input?.path || "");
-}
-function getLocaleFromRoute(route) {
-  const input = normalizeInput(route);
-  return input[0] === "/" ? getLocaleFromRoutePath(input) : getLocaleFromRouteName(input);
-}
-
-function matchDomainLocale(locales, host, pathLocale) {
-  const normalizeDomain = (domain = "") => domain.replace(/https?:\/\//, "");
-  const matches = locales.filter(
-    (locale) => normalizeDomain(locale.domain) === host || toArray(locale.domains).includes(host)
-  );
-  if (matches.length <= 1) {
-    return matches[0]?.code;
-  }
-  return (
-    // match by current path locale
-    matches.find((l) => l.code === pathLocale)?.code || matches.find((l) => l.defaultForDomains?.includes(host) ?? l.domainDefault)?.code
-  );
-}
-
-const getCookieLocale = (event, cookieName) => (getCookie(event, cookieName)) || void 0;
-const getRouteLocale = (event, route) => getLocaleFromRoute(route);
-const getHeaderLocale = (event) => findBrowserLocale(normalizedLocales, parseAcceptLanguage(getRequestHeader(event, "accept-language") || ""));
-const getHostLocale = (event, path, domainLocales) => {
-  const host = getRequestURL(event, { xForwardedHost: true }).host;
-  const locales = normalizedLocales.map((l) => ({
-    ...l,
-    domain: domainLocales[l.code]?.domain ?? l.domain
-  }));
-  return matchDomainLocale(locales, host, getLocaleFromRoutePath(path));
-};
-const useDetectors = (event, config, nuxtApp) => {
-  if (!event) {
-    throw new Error("H3Event is required for server-side locale detection");
-  }
-  const runtimeI18n = useRuntimeI18n();
-  return {
-    cookie: () => getCookieLocale(event, config.cookieKey),
-    header: () => getHeaderLocale(event) ,
-    navigator: () => void 0,
-    host: (path) => getHostLocale(event, path, runtimeI18n.domainLocales),
-    route: (path) => getRouteLocale(event, path)
-  };
-};
-
-// Generated by @nuxtjs/i18n
-const pathToI18nConfig = {
-  "/": {
-    "en": "/",
-    "ru": "/",
-    "uz": "/"
-  },
-  "/catalog": {
-    "en": "/catalog",
-    "ru": "/catalog",
-    "uz": "/catalog"
-  },
-  "/catalog/unilibrary": {
-    "en": "/catalog/unilibrary",
-    "ru": "/catalog/unilibrary",
-    "uz": "/catalog/unilibrary"
-  },
-  "/catalog/unilibrary/:slug()": {
-    "en": "/catalog/unilibrary/:slug()",
-    "ru": "/catalog/unilibrary/:slug()",
-    "uz": "/catalog/unilibrary/:slug()"
-  }
-};
-const i18nPathToPath = {
-  "/": "/",
-  "/catalog": "/catalog",
-  "/catalog/unilibrary": "/catalog/unilibrary",
-  "/catalog/unilibrary/:slug()": "/catalog/unilibrary/:slug()"
-};
-
-const matcher = createRouterMatcher([], {});
-for (const path of Object.keys(i18nPathToPath)) {
-  matcher.addRoute({ path, component: () => "", meta: {} });
-}
-const getI18nPathToI18nPath = (path, locale) => {
-  if (!path || !locale) {
-    return;
-  }
-  const plainPath = i18nPathToPath[path];
-  const i18nConfig = pathToI18nConfig[plainPath];
-  if (i18nConfig && i18nConfig[locale]) {
-    return i18nConfig[locale] === true ? plainPath : i18nConfig[locale];
-  }
-};
-function isExistingNuxtRoute(path) {
-  if (path === "") {
-    return;
-  }
-  if (path.endsWith("/__nuxt_error")) {
-    return;
-  }
-  const resolvedMatch = matcher.resolve({ path }, { path: "/", name: "", matched: [], params: {}, meta: {} });
-  return resolvedMatch.matched.length > 0 ? resolvedMatch : void 0;
-}
-function matchLocalized(path, locale, defaultLocale) {
-  if (path === "") {
-    return;
-  }
-  const parsed = parsePath(path);
-  const resolvedMatch = matcher.resolve(
-    { path: parsed.pathname || "/" },
-    { path: "/", name: "", matched: [], params: {}, meta: {} }
-  );
-  if (resolvedMatch.matched.length > 0) {
-    const alternate = getI18nPathToI18nPath(resolvedMatch.matched[0].path, locale);
-    const match = matcher.resolve(
-      { params: resolvedMatch.params },
-      { path: alternate || "/", name: "", matched: [], params: {}, meta: {} }
-    );
-    const isPrefixable = prefixable(locale, defaultLocale);
-    return withLeadingSlash(joinURL(isPrefixable ? locale : "", match.path));
-  }
-}
-function prefixable(currentLocale, defaultLocale) {
-  return (currentLocale !== defaultLocale || "prefix_except_default" === "prefix");
-}
-
-function* detect(detectors, detection, path) {
-  if (detection.enabled) {
-    yield { locale: detectors.cookie(), source: "cookie" };
-    yield { locale: detectors.header(), source: "header" };
-  }
-  {
-    yield { locale: detectors.route(path), source: "route" };
-  }
-  yield { locale: detection.fallbackLocale, source: "fallback" };
-}
-const _iI3Z9mdieu81O4t8M7a40xIlS_QQu3YzuC4Rtph4zU = defineNitroPlugin(async (nitro) => {
-  const runtimeI18n = useRuntimeI18n();
-  const rootRedirect = resolveRootRedirect(runtimeI18n.rootRedirect);
-  runtimeI18n.defaultLocale || "";
-  try {
-    const cacheStorage = useStorage("cache");
-    const cachedKeys = await cacheStorage.getKeys("nitro:handlers:i18n");
-    await Promise.all(cachedKeys.map((key) => cacheStorage.removeItem(key)));
-  } catch {
-  }
-  const detection = useI18nDetection();
-  const cookieOptions = {
-    path: "/",
-    domain: detection.cookieDomain || void 0,
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: "lax",
-    secure: detection.cookieSecure
-  };
-  const createBaseUrlGetter = () => {
-    isFunction(runtimeI18n.baseUrl) ? "" : runtimeI18n.baseUrl || "";
-    if (isFunction(runtimeI18n.baseUrl)) {
-      return () => "";
-    }
-    return (event, defaultLocale) => {
-      return "";
-    };
-  };
-  function resolveRedirectPath(event, path, pathLocale, defaultLocale, detector) {
-    let locale = "";
-    for (const detected of detect(detector, detection, event.path)) {
-      if (detected.locale && isSupportedLocale(detected.locale)) {
-        locale = detected.locale;
-        break;
-      }
-    }
-    locale ||= defaultLocale;
-    function getLocalizedMatch(locale2) {
-      const res = matchLocalized(path || "/", locale2, defaultLocale);
-      if (res && res !== event.path) {
-        return res;
-      }
-    }
-    let resolvedPath = void 0;
-    let redirectCode = 302;
-    const requestURL = getRequestURL(event);
-    if (rootRedirect && requestURL.pathname === "/") {
-      locale = detection.enabled && locale || defaultLocale;
-      resolvedPath = isSupportedLocale(detector.route(rootRedirect.path)) && rootRedirect.path || matchLocalized(rootRedirect.path, locale, defaultLocale);
-      redirectCode = rootRedirect.code;
-    } else if (runtimeI18n.redirectStatusCode) {
-      redirectCode = runtimeI18n.redirectStatusCode;
-    }
-    switch (detection.redirectOn) {
-      case "root":
-        if (requestURL.pathname !== "/") {
-          break;
-        }
-      // fallthrough (root has no prefix)
-      case "no prefix":
-        if (pathLocale) {
-          break;
-        }
-      // fallthrough to resolve
-      case "all":
-        resolvedPath ??= getLocalizedMatch(locale);
-        break;
-    }
-    if (requestURL.pathname === "/" && "prefix_except_default" === "prefix") ;
-    return { path: resolvedPath, code: redirectCode, locale };
-  }
-  const baseUrlGetter = createBaseUrlGetter();
-  nitro.hooks.hook("request", async (event) => {
-    await initializeI18nContext(event);
-  });
-  nitro.hooks.hook("render:before", async ({ event }) => {
-    const ctx = useI18nContext(event);
-    const url = getRequestURL(event);
-    const detector = useDetectors(event, detection);
-    const localeSegment = detector.route(event.path);
-    const pathLocale = isSupportedLocale(localeSegment) && localeSegment || void 0;
-    const path = (pathLocale && url.pathname.slice(pathLocale.length + 1)) ?? url.pathname;
-    if (!url.pathname.includes("/_i18n/C5FNUprt") && !isExistingNuxtRoute(path)) {
-      return;
-    }
-    const resolved = resolveRedirectPath(event, path, pathLocale, ctx.vueI18nOptions.defaultLocale, detector);
-    if (resolved.path && resolved.path !== url.pathname) {
-      ctx.detectLocale = resolved.locale;
-      detection.useCookie && setCookie(event, detection.cookieKey, resolved.locale, cookieOptions);
-      await sendRedirect(
-        event,
-        joinURL(baseUrlGetter(event, ctx.vueI18nOptions.defaultLocale), resolved.path + url.search),
-        resolved.code
-      );
-      return;
-    }
-  });
-  nitro.hooks.hook("render:html", (htmlContext, { event }) => {
-    tryUseI18nContext(event);
-  });
-});
-
 const script = "\"use strict\";(()=>{const t=window,e=document.documentElement,c=[\"dark\",\"light\"],n=getStorageValue(\"localStorage\",\"nuxt-color-mode\")||\"system\";let i=n===\"system\"?u():n;const r=e.getAttribute(\"data-color-mode-forced\");r&&(i=r),l(i),t[\"__NUXT_COLOR_MODE__\"]={preference:n,value:i,getColorScheme:u,addColorScheme:l,removeColorScheme:d};function l(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.add(s):e.className+=\" \"+s,a&&e.setAttribute(\"data-\"+a,o)}function d(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.remove(s):e.className=e.className.replace(new RegExp(s,\"g\"),\"\"),a&&e.removeAttribute(\"data-\"+a)}function f(o){return t.matchMedia(\"(prefers-color-scheme\"+o+\")\")}function u(){if(t.matchMedia&&f(\"\").media!==\"not all\"){for(const o of c)if(f(\":\"+o).matches)return o}return\"light\"}})();function getStorageValue(t,e){switch(t){case\"localStorage\":return window.localStorage.getItem(e);case\"sessionStorage\":return window.sessionStorage.getItem(e);case\"cookie\":return getCookie(e);default:return null}}function getCookie(t){const c=(\"; \"+window.document.cookie).split(\"; \"+t+\"=\");if(c.length===2)return c.pop()?.split(\";\").shift()}";
 
-const _08fn3xiUW5bjp3bTuAcwYyRachpkMJehik64Jv7MC4 = (function(nitro) {
+const _9LopkymQg9j8K2AwleBj2uzJVhYMgoQApAS7t8hBwg8 = (function(nitro) {
   nitro.hooks.hook("render:html", (htmlContext) => {
     htmlContext.head.push(`<script>${script}<\/script>`);
   });
 });
 
 const plugins = [
-  _iI3Z9mdieu81O4t8M7a40xIlS_QQu3YzuC4Rtph4zU,
-_08fn3xiUW5bjp3bTuAcwYyRachpkMJehik64Jv7MC4
+  _9LopkymQg9j8K2AwleBj2uzJVhYMgoQApAS7t8hBwg8
 ];
 
 const assets = {
   "/_payload.json": {
     "type": "application/json;charset=utf-8",
-    "etag": "\"45-Mbm/MDZES52Om6y9CklbpDvfhyU\"",
-    "mtime": "2026-01-15T12:08:49.495Z",
+    "etag": "\"45-/OGrI1mEGeEVbtMHwLI/4fWz1Go\"",
+    "mtime": "2026-01-15T14:20:21.857Z",
     "size": 69,
     "path": "../public/_payload.json"
   },
   "/favicon.ico": {
     "type": "image/vnd.microsoft.icon",
     "etag": "\"10be-n8egyE9tcb7sKGr/pYCaQ4uWqxI\"",
-    "mtime": "2026-01-15T12:08:51.806Z",
+    "mtime": "2026-01-15T14:20:21.880Z",
     "size": 4286,
     "path": "../public/favicon.ico"
+  },
+  "/index.html": {
+    "type": "text/html;charset=utf-8",
+    "etag": "\"5919-ipaazLwmuYt27NNG89unYIru9ho\"",
+    "mtime": "2026-01-15T14:20:21.856Z",
+    "size": 22809,
+    "path": "../public/index.html"
+  },
+  "/_nuxt/BhdlByWg.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"28c-xs5gRgDuxrV7BZpjUKVxT//r7LE\"",
+    "mtime": "2026-01-15T14:20:21.878Z",
+    "size": 652,
+    "path": "../public/_nuxt/BhdlByWg.js"
+  },
+  "/_nuxt/BwLdb5kU.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"16c1-WQm9yMbwa54eY/mxAkp9SOQgi/E\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 5825,
+    "path": "../public/_nuxt/BwLdb5kU.js"
+  },
+  "/_nuxt/4zKrOg4j.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1e56f-2TNKoUHp9fWKsdg0XGG19AdBJ64\"",
+    "mtime": "2026-01-15T14:20:21.878Z",
+    "size": 124271,
+    "path": "../public/_nuxt/4zKrOg4j.js"
+  },
+  "/_nuxt/CAQk3dSM.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"e00-/vW2ZcAKLoivfX20BdK9YCn9tRs\"",
+    "mtime": "2026-01-15T14:20:21.878Z",
+    "size": 3584,
+    "path": "../public/_nuxt/CAQk3dSM.js"
+  },
+  "/_nuxt/D-0hC8Ua.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"2d71-dFAik+iwx+E+ranmwcPJMMJZnX4\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 11633,
+    "path": "../public/_nuxt/D-0hC8Ua.js"
+  },
+  "/_nuxt/D12Z653y.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1e1-fdmt/D1FyMUdQWBI4tZIVLuR+WE\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 481,
+    "path": "../public/_nuxt/D12Z653y.js"
+  },
+  "/_nuxt/D8nI4ZGT.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"22e7-F5MwV/jOOkvw48clYOBMXo/SbVQ\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 8935,
+    "path": "../public/_nuxt/D8nI4ZGT.js"
+  },
+  "/_nuxt/Dmx0xEam.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"18c-doPR7I71SSR1sfMyVI14sgjXHJs\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 396,
+    "path": "../public/_nuxt/Dmx0xEam.js"
+  },
+  "/_nuxt/PlClkFLt.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"10f5-d0YDK+vihfQldW8AT2d+c6FeAlo\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 4341,
+    "path": "../public/_nuxt/PlClkFLt.js"
+  },
+  "/_nuxt/WxpKPgxe.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"23cbc-fq4uIWqpI8szDUFEcHH/N3Bnmck\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 146620,
+    "path": "../public/_nuxt/WxpKPgxe.js"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-8KeALpAu2nWJknvJhMk31fqE06iajfSeiM57lsZAo5g.woff": {
     "type": "font/woff",
     "etag": "\"7e1c-vu25sJl+rJcafkFUI6hEMSxUm5M\"",
-    "mtime": "2026-01-15T12:08:51.793Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 32284,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-8KeALpAu2nWJknvJhMk31fqE06iajfSeiM57lsZAo5g.woff"
-  },
-  "/index.html": {
-    "type": "text/html;charset=utf-8",
-    "etag": "\"6526-+6jAJK4G59cPnBw3H1EGumLNFm4\"",
-    "mtime": "2026-01-15T12:08:49.493Z",
-    "size": 25894,
-    "path": "../public/index.html"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-CAyrLGU3kauAbzcFnj2Cv_iAPV8wT2NEvNmrA_77Up0.woff": {
     "type": "font/woff",
     "etag": "\"7e14-MYF7t7EKTgujjt28CNpyCo0BoaE\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 32276,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-CAyrLGU3kauAbzcFnj2Cv_iAPV8wT2NEvNmrA_77Up0.woff"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-G1pKsfAhfeIECsLbuPUckyz92yuHFKi9rmiwlRl8Tb0.woff": {
     "type": "font/woff",
     "etag": "\"7e1c-gRoxz3CqcY4usq/vb5gcJX14NeE\"",
-    "mtime": "2026-01-15T12:08:51.793Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 32284,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-G1pKsfAhfeIECsLbuPUckyz92yuHFKi9rmiwlRl8Tb0.woff"
+  },
+  "/_nuxt/BZF4Xa1W.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"59933-wiJ0WWhj7/QimX6z3UJZ+UuyUnE\"",
+    "mtime": "2026-01-15T14:20:21.878Z",
+    "size": 366899,
+    "path": "../public/_nuxt/BZF4Xa1W.js"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-Cbq5YGF_nsoQo6qYm9EhA3p-oINRUqlXhACZ2Wh4BBE.woff": {
     "type": "font/woff",
     "etag": "\"7f00-YtZhWVFcCeKqkmgcK+5PGF+sFSc\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 32512,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-Cbq5YGF_nsoQo6qYm9EhA3p-oINRUqlXhACZ2Wh4BBE.woff"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-OnaIl8fChu9Cb4bpYiOA4dK_W7eeMCjXQOWR8tUhXJ0.woff": {
     "type": "font/woff",
     "etag": "\"7698-h4lCCjuBSv696ip7FasGUvxCRUA\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 30360,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-OnaIl8fChu9Cb4bpYiOA4dK_W7eeMCjXQOWR8tUhXJ0.woff"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-kzEiBeXQ06q7fC06p1Y4RaOpLlRWCnHcCcSaqFMJ6fc.woff": {
     "type": "font/woff",
     "etag": "\"766c-pLN/uZMWKADTjjy74IyR9XCvD2Y\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 30316,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-kzEiBeXQ06q7fC06p1Y4RaOpLlRWCnHcCcSaqFMJ6fc.woff"
-  },
-  "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-rmd8_oLeTXCNUhiFyy1UYsogNo6QYBr9dQHrhl_hLbs.woff": {
-    "type": "font/woff",
-    "etag": "\"7698-fRXO0Z8d51xEyh5Mi6SKX7Mnrbs\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
-    "size": 30360,
-    "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-rmd8_oLeTXCNUhiFyy1UYsogNo6QYBr9dQHrhl_hLbs.woff"
   },
   "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-wjJHhPsTzX4mZm37l7bbvLDtOEIT1R38DKPlwV_Z34A.woff": {
     "type": "font/woff",
     "etag": "\"76e4-/c70YAFbfi6BmRZTjWuZ7cQZSSg\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 30436,
     "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-wjJHhPsTzX4mZm37l7bbvLDtOEIT1R38DKPlwV_Z34A.woff"
+  },
+  "/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-rmd8_oLeTXCNUhiFyy1UYsogNo6QYBr9dQHrhl_hLbs.woff": {
+    "type": "font/woff",
+    "etag": "\"7698-fRXO0Z8d51xEyh5Mi6SKX7Mnrbs\"",
+    "mtime": "2026-01-15T14:20:21.876Z",
+    "size": 30360,
+    "path": "../public/_fonts/1ZTlEDqU4DtwDJiND8f6qaugUpa0RIDvQl-v7iM6l54-rmd8_oLeTXCNUhiFyy1UYsogNo6QYBr9dQHrhl_hLbs.woff"
   },
   "/_fonts/8VR2wSMN-3U4NbWAVYXlkRV6hA0jFBXP-0RtL3X7fko-x2gYI4qfmkRdxyQQUPaBZdZdgl1TeVrquF_TxHeM4lM.woff2": {
     "type": "font/woff2",
     "etag": "\"212c-FshXJibFzNhd2HEIMP8C3JR5PYg\"",
-    "mtime": "2026-01-15T12:08:51.795Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 8492,
     "path": "../public/_fonts/8VR2wSMN-3U4NbWAVYXlkRV6hA0jFBXP-0RtL3X7fko-x2gYI4qfmkRdxyQQUPaBZdZdgl1TeVrquF_TxHeM4lM.woff2"
   },
   "/_fonts/57NSSoFy1VLVs2gqly8Ls9awBnZMFyXGrefpmqvdqmc-zJfbBtpgM4cDmcXBsqZNW79_kFnlpPd62b48glgdydA.woff2": {
     "type": "font/woff2",
     "etag": "\"4b5c-TAo9mx7r3xQs52+HbHcHJ52z8Qo\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 19292,
     "path": "../public/_fonts/57NSSoFy1VLVs2gqly8Ls9awBnZMFyXGrefpmqvdqmc-zJfbBtpgM4cDmcXBsqZNW79_kFnlpPd62b48glgdydA.woff2"
+  },
+  "/_nuxt/entry.CbgiJAOb.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"2bdea-vLSjAJwUuyJYESeuRCvABPsTIOg\"",
+    "mtime": "2026-01-15T14:20:21.879Z",
+    "size": 179690,
+    "path": "../public/_nuxt/entry.CbgiJAOb.css"
+  },
+  "/_fonts/NdzqRASp2bovDUhQT1IRE_EMqKJ2KYQdTCfFcBvL8yw-KhwZiS86o3fErOe5GGMExHUemmI_dBfaEFxjISZrBd0.woff2": {
+    "type": "font/woff2",
+    "etag": "\"1d98-cDZfMibtk4T04FTTAmlfhWDpkN0\"",
+    "mtime": "2026-01-15T14:20:21.876Z",
+    "size": 7576,
+    "path": "../public/_fonts/NdzqRASp2bovDUhQT1IRE_EMqKJ2KYQdTCfFcBvL8yw-KhwZiS86o3fErOe5GGMExHUemmI_dBfaEFxjISZrBd0.woff2"
   },
   "/_fonts/GsKUclqeNLJ96g5AU593ug6yanivOiwjW_7zESNPChw-jHA4tBeM1bjF7LATGUpfBuSTyomIFrWBTzjF7txVYfg.woff2": {
     "type": "font/woff2",
     "etag": "\"680c-mJtsV33lkTAKSmfq5k3lKHSllcU\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 26636,
     "path": "../public/_fonts/GsKUclqeNLJ96g5AU593ug6yanivOiwjW_7zESNPChw-jHA4tBeM1bjF7LATGUpfBuSTyomIFrWBTzjF7txVYfg.woff2"
   },
   "/_fonts/Ld1FnTo3yTIwDyGfTQ5-Fws9AWsCbKfMvgxduXr7JcY-W25bL8NF1fjpLRSOgJb7RoZPHqGQNwMTM7S9tHVoxx8.woff2": {
     "type": "font/woff2",
     "etag": "\"6ec4-8OoFFPZKF1grqmfGVjh5JDE6DOU\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 28356,
     "path": "../public/_fonts/Ld1FnTo3yTIwDyGfTQ5-Fws9AWsCbKfMvgxduXr7JcY-W25bL8NF1fjpLRSOgJb7RoZPHqGQNwMTM7S9tHVoxx8.woff2"
   },
-  "/_fonts/NdzqRASp2bovDUhQT1IRE_EMqKJ2KYQdTCfFcBvL8yw-KhwZiS86o3fErOe5GGMExHUemmI_dBfaEFxjISZrBd0.woff2": {
-    "type": "font/woff2",
-    "etag": "\"1d98-cDZfMibtk4T04FTTAmlfhWDpkN0\"",
-    "mtime": "2026-01-15T12:08:51.794Z",
-    "size": 7576,
-    "path": "../public/_fonts/NdzqRASp2bovDUhQT1IRE_EMqKJ2KYQdTCfFcBvL8yw-KhwZiS86o3fErOe5GGMExHUemmI_dBfaEFxjISZrBd0.woff2"
+  "/_nuxt/builds/latest.json": {
+    "type": "application/json",
+    "etag": "\"47-126k6peaOL5KylENUrx5PTNIiZg\"",
+    "mtime": "2026-01-15T14:20:21.874Z",
+    "size": 71,
+    "path": "../public/_nuxt/builds/latest.json"
   },
   "/_fonts/iTkrULNFJJkTvihIg1Vqi5IODRH_9btXCioVF5l98I8-AndUyau2HR2felA_ra8V2mutQgschhasE5FD1dXGJX8.woff2": {
     "type": "font/woff2",
     "etag": "\"47c4-5xyngHnzzhetUee74tMx9OTgqNQ\"",
-    "mtime": "2026-01-15T12:08:51.795Z",
+    "mtime": "2026-01-15T14:20:21.876Z",
     "size": 18372,
     "path": "../public/_fonts/iTkrULNFJJkTvihIg1Vqi5IODRH_9btXCioVF5l98I8-AndUyau2HR2felA_ra8V2mutQgschhasE5FD1dXGJX8.woff2"
   },
-  "/_nuxt/B2VHQlIU.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1e597-jLaMUP125Hb1msnxXlh063k2wB0\"",
-    "mtime": "2026-01-15T12:08:51.800Z",
-    "size": 124311,
-    "path": "../public/_nuxt/B2VHQlIU.js"
-  },
-  "/_nuxt/BRnQMxVA.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"28c-p1seseNdt83pe5u3ta+5MYIds1E\"",
-    "mtime": "2026-01-15T12:08:51.799Z",
-    "size": 652,
-    "path": "../public/_nuxt/BRnQMxVA.js"
-  },
-  "/_nuxt/BdNL9JEv.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"10f5-unIoOZgYpO+WtIyFoM1hKi5iXJQ\"",
-    "mtime": "2026-01-15T12:08:51.798Z",
-    "size": 4341,
-    "path": "../public/_nuxt/BdNL9JEv.js"
-  },
-  "/_nuxt/BsnDaMN-.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1e1-tQQl35/LSZEoqilW4M1LEX184Ns\"",
-    "mtime": "2026-01-15T12:08:51.799Z",
-    "size": 481,
-    "path": "../public/_nuxt/BsnDaMN-.js"
-  },
-  "/_nuxt/CFhxOO7Q.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"2d71-Cvpcd06L0WmBd/ztU9nsM3y1MZE\"",
-    "mtime": "2026-01-15T12:08:51.800Z",
-    "size": 11633,
-    "path": "../public/_nuxt/CFhxOO7Q.js"
-  },
-  "/_nuxt/Cb5DqdUC.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"22e7-ryRIAeXimGHhzrnGSBkr0NOWttg\"",
-    "mtime": "2026-01-15T12:08:51.800Z",
-    "size": 8935,
-    "path": "../public/_nuxt/Cb5DqdUC.js"
-  },
-  "/_nuxt/BVOiYQkb.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"2e172-6l2JPQyAzMTWH7ATGeu1WtYr5Fs\"",
-    "mtime": "2026-01-15T12:08:51.801Z",
-    "size": 188786,
-    "path": "../public/_nuxt/BVOiYQkb.js"
-  },
-  "/_nuxt/B_IRgX7H.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"6af62-CzyJfDUSVdLvJx9mrZF9gxw4h4s\"",
-    "mtime": "2026-01-15T12:08:51.802Z",
-    "size": 438114,
-    "path": "../public/_nuxt/B_IRgX7H.js"
-  },
-  "/_nuxt/CxaSgttc.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"18c-qtB3bVxrCxh5cVzBuKDXRmDVuzM\"",
-    "mtime": "2026-01-15T12:08:51.801Z",
-    "size": 396,
-    "path": "../public/_nuxt/CxaSgttc.js"
-  },
-  "/_nuxt/D0nCo9zx.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"16bf-LuN5+v2k8Y+lrB3z8UiQ0VDuMlU\"",
-    "mtime": "2026-01-15T12:08:51.801Z",
-    "size": 5823,
-    "path": "../public/_nuxt/D0nCo9zx.js"
-  },
-  "/_nuxt/qhgCZN6U.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"e00-nWe0q+zSMpJn2//o3Sn6W+2nrc0\"",
-    "mtime": "2026-01-15T12:08:51.802Z",
-    "size": 3584,
-    "path": "../public/_nuxt/qhgCZN6U.js"
-  },
-  "/_nuxt/builds/latest.json": {
+  "/_nuxt/builds/meta/01907867-f1a7-424e-8839-4e334fb7bbf3.json": {
     "type": "application/json",
-    "etag": "\"47-yCgqLYQ/OcMQem37nGj9PYEUYwQ\"",
-    "mtime": "2026-01-15T12:08:51.790Z",
-    "size": 71,
-    "path": "../public/_nuxt/builds/latest.json"
-  },
-  "/_i18n/C5FNUprt/ru/messages.json": {
-    "type": "application/json",
-    "etag": "\"9-nnJruii6zOhyY0tRGhIy6kFBecg\"",
-    "mtime": "2026-01-15T12:08:49.496Z",
-    "size": 9,
-    "path": "../public/_i18n/C5FNUprt/ru/messages.json"
-  },
-  "/_i18n/C5FNUprt/en/messages.json": {
-    "type": "application/json",
-    "etag": "\"9-h0tBNnVxGQkinKIo7+phM4PWqaQ\"",
-    "mtime": "2026-01-15T12:08:49.496Z",
-    "size": 9,
-    "path": "../public/_i18n/C5FNUprt/en/messages.json"
-  },
-  "/_i18n/C5FNUprt/uz/messages.json": {
-    "type": "application/json",
-    "etag": "\"9-B/P8N20XKqx9cMKBjNFTucAdJK0\"",
-    "mtime": "2026-01-15T12:08:49.496Z",
-    "size": 9,
-    "path": "../public/_i18n/C5FNUprt/uz/messages.json"
-  },
-  "/_nuxt/builds/meta/3ce60f67-427c-4082-a8f6-dfd5c3a04abe.json": {
-    "type": "application/json",
-    "etag": "\"a1-U139vvPoHLGLV86eTtjEqi2TsnY\"",
-    "mtime": "2026-01-15T12:08:51.786Z",
+    "etag": "\"a1-MSuaLWD9as1iYssAJQ6OzwXbMKs\"",
+    "mtime": "2026-01-15T14:20:21.873Z",
     "size": 161,
-    "path": "../public/_nuxt/builds/meta/3ce60f67-427c-4082-a8f6-dfd5c3a04abe.json"
-  },
-  "/_nuxt/entry.CbgiJAOb.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"2bdea-vLSjAJwUuyJYESeuRCvABPsTIOg\"",
-    "mtime": "2026-01-15T12:08:51.803Z",
-    "size": 179690,
-    "path": "../public/_nuxt/entry.CbgiJAOb.css"
+    "path": "../public/_nuxt/builds/meta/01907867-f1a7-424e-8839-4e334fb7bbf3.json"
   }
 };
 
@@ -6173,7 +5208,7 @@ function getAsset (id) {
 
 const METHODS = /* @__PURE__ */ new Set(["HEAD", "GET"]);
 const EncodingMap = { gzip: ".gz", br: ".br" };
-const _vwfbTm = eventHandler((event) => {
+const _DXJCAd = eventHandler((event) => {
   if (event.method && !METHODS.has(event.method)) {
     return;
   }
@@ -6239,13 +5274,67 @@ const _vwfbTm = eventHandler((event) => {
 
 const _SxA8c9 = defineEventHandler(() => {});
 
+function defineRenderHandler(render) {
+  const runtimeConfig = useRuntimeConfig();
+  return eventHandler(async (event) => {
+    const nitroApp = useNitroApp();
+    const ctx = { event, render, response: void 0 };
+    await nitroApp.hooks.callHook("render:before", ctx);
+    if (!ctx.response) {
+      if (event.path === `${runtimeConfig.app.baseURL}favicon.ico`) {
+        setResponseHeader(event, "Content-Type", "image/x-icon");
+        return send(
+          event,
+          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        );
+      }
+      ctx.response = await ctx.render(event);
+      if (!ctx.response) {
+        const _currentStatus = getResponseStatus(event);
+        setResponseStatus(event, _currentStatus === 200 ? 500 : _currentStatus);
+        return send(
+          event,
+          "No response returned from render handler: " + event.path
+        );
+      }
+    }
+    await nitroApp.hooks.callHook("render:response", ctx.response, ctx);
+    if (ctx.response.headers) {
+      setResponseHeaders(event, ctx.response.headers);
+    }
+    if (ctx.response.statusCode || ctx.response.statusMessage) {
+      setResponseStatus(
+        event,
+        ctx.response.statusCode,
+        ctx.response.statusMessage
+      );
+    }
+    return ctx.response.body;
+  });
+}
+
+function baseURL() {
+  return useRuntimeConfig().app.baseURL;
+}
+function buildAssetsDir() {
+  return useRuntimeConfig().app.buildAssetsDir;
+}
+function buildAssetsURL(...path) {
+  return joinRelativeURL(publicAssetsURL(), buildAssetsDir(), ...path);
+}
+function publicAssetsURL(...path) {
+  const app = useRuntimeConfig().app;
+  const publicBase = app.cdnURL || app.baseURL;
+  return path.length ? joinRelativeURL(publicBase, ...path) : publicBase;
+}
+
 const collections = {
   'lucide': () => import('../_/icons.mjs').then(m => m.default),
   'simple-icons': () => import('../_/icons2.mjs').then(m => m.default),
 };
 
 const DEFAULT_ENDPOINT = "https://api.iconify.design";
-const _978Zcf = defineCachedEventHandler(async (event) => {
+const _ko3aeq = defineCachedEventHandler(async (event) => {
   const url = getRequestURL(event);
   if (!url)
     return createError$1({ status: 400, message: "Invalid icon request" });
@@ -6295,124 +5384,7 @@ const _978Zcf = defineCachedEventHandler(async (event) => {
   // 1 week
 });
 
-const storage = prefixStorage(useStorage(), "i18n");
-function cachedFunctionI18n(fn, opts) {
-  opts = { maxAge: 1, ...opts };
-  const pending = {};
-  async function get(key, resolver) {
-    const isPending = pending[key];
-    if (!isPending) {
-      pending[key] = Promise.resolve(resolver());
-    }
-    try {
-      return await pending[key];
-    } finally {
-      delete pending[key];
-    }
-  }
-  return async (...args) => {
-    const key = [opts.name, opts.getKey(...args)].join(":").replace(/:\/$/, ":index");
-    const maxAge = opts.maxAge ?? 1;
-    const isCacheable = !opts.shouldBypassCache(...args) && maxAge >= 0;
-    const cache = isCacheable && await storage.getItemRaw(key);
-    if (!cache || cache.ttl < Date.now()) {
-      pending[key] = Promise.resolve(fn(...args));
-      const value = await get(key, () => fn(...args));
-      if (isCacheable) {
-        await storage.setItemRaw(key, { ttl: Date.now() + maxAge * 1e3, value, mtime: Date.now() });
-      }
-      return value;
-    }
-    return cache.value;
-  };
-}
-
-const _getMessages = async (locale) => {
-  return { [locale]: await getLocaleMessagesMerged(locale, localeLoaders[locale]) };
-};
-const _getMessagesCached = cachedFunctionI18n(_getMessages, {
-  name: "messages",
-  maxAge: 60 * 60 * 24,
-  getKey: (locale) => locale,
-  shouldBypassCache: (locale) => !isLocaleCacheable(locale)
-});
-const getMessages = _getMessagesCached;
-const _getMergedMessages = async (locale, fallbackLocales) => {
-  const merged = {};
-  try {
-    if (fallbackLocales.length > 0) {
-      const messages = await Promise.all(fallbackLocales.map(getMessages));
-      for (const message2 of messages) {
-        deepCopy(message2, merged);
-      }
-    }
-    const message = await getMessages(locale);
-    deepCopy(message, merged);
-    return merged;
-  } catch (e) {
-    throw new Error("Failed to merge messages: " + e.message);
-  }
-};
-const getMergedMessages = cachedFunctionI18n(_getMergedMessages, {
-  name: "merged-single",
-  maxAge: 60 * 60 * 24,
-  getKey: (locale, fallbackLocales) => `${locale}-[${[...new Set(fallbackLocales)].sort().join("-")}]`,
-  shouldBypassCache: (locale, fallbackLocales) => !isLocaleWithFallbacksCacheable(locale, fallbackLocales)
-});
-const _getAllMergedMessages = async (locales) => {
-  const merged = {};
-  try {
-    const messages = await Promise.all(locales.map(getMessages));
-    for (const message of messages) {
-      deepCopy(message, merged);
-    }
-    return merged;
-  } catch (e) {
-    throw new Error("Failed to merge messages: " + e.message);
-  }
-};
-cachedFunctionI18n(_getAllMergedMessages, {
-  name: "merged-all",
-  maxAge: 60 * 60 * 24,
-  getKey: (locales) => locales.join("-"),
-  shouldBypassCache: (locales) => !locales.every((locale) => isLocaleCacheable(locale))
-});
-
-const _messagesHandler = defineEventHandler(async (event) => {
-  const locale = getRouterParam(event, "locale");
-  if (!locale) {
-    throw createError$1({ status: 400, message: "Locale not specified." });
-  }
-  const ctx = useI18nContext(event);
-  if (ctx.localeConfigs && locale in ctx.localeConfigs === false) {
-    throw createError$1({ status: 404, message: `Locale '${locale}' not found.` });
-  }
-  const messages = await getMergedMessages(locale, ctx.localeConfigs?.[locale]?.fallbacks ?? []);
-  deepCopy(messages, ctx.messages);
-  return ctx.messages;
-});
-const _cachedMessageLoader = defineCachedFunction(_messagesHandler, {
-  name: "i18n:messages-internal",
-  maxAge: 60 * 60 * 24,
-  getKey: (event) => [getRouterParam(event, "locale") ?? "null", getRouterParam(event, "hash") ?? "null"].join("-"),
-  async shouldBypassCache(event) {
-    const locale = getRouterParam(event, "locale");
-    if (locale == null) {
-      return false;
-    }
-    const ctx = tryUseI18nContext(event) || await initializeI18nContext(event);
-    return !ctx.localeConfigs?.[locale]?.cacheable;
-  }
-});
-const _messagesHandlerCached = defineCachedEventHandler(_cachedMessageLoader, {
-  name: "i18n:messages",
-  maxAge: 10,
-  swr: false,
-  getKey: (event) => [getRouterParam(event, "locale") ?? "null", getRouterParam(event, "hash") ?? "null"].join("-")
-});
-const _fm3FrT = _messagesHandlerCached;
-
-const _YcLE4R = lazyEventHandler(() => {
+const _AFqVZE = lazyEventHandler(() => {
   const opts = useRuntimeConfig().ipx || {};
   const fsDir = opts?.fs?.dir ? (Array.isArray(opts.fs.dir) ? opts.fs.dir : [opts.fs.dir]).map((dir) => isAbsolute(dir) ? dir : fileURLToPath(new URL(dir, globalThis._importMeta_.url))) : void 0;
   const fsStorage = opts.fs?.dir ? ipxFSStorage({ ...opts.fs, dir: fsDir }) : void 0;
@@ -6430,16 +5402,15 @@ const _YcLE4R = lazyEventHandler(() => {
   return useBase(opts.baseURL, ipxHandler);
 });
 
-const _lazy_msxPLA = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
+const _lazy_e8oSOK = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
 
 const handlers = [
-  { route: '', handler: _vwfbTm, lazy: false, middleware: true, method: undefined },
-  { route: '/__nuxt_error', handler: _lazy_msxPLA, lazy: true, middleware: false, method: undefined },
+  { route: '', handler: _DXJCAd, lazy: false, middleware: true, method: undefined },
+  { route: '/__nuxt_error', handler: _lazy_e8oSOK, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
-  { route: '/api/_nuxt_icon/:collection', handler: _978Zcf, lazy: false, middleware: false, method: undefined },
-  { route: '/_i18n/:hash/:locale/messages.json', handler: _fm3FrT, lazy: false, middleware: false, method: undefined },
-  { route: '/_ipx/**', handler: _YcLE4R, lazy: false, middleware: false, method: undefined },
-  { route: '/**', handler: _lazy_msxPLA, lazy: true, middleware: false, method: undefined }
+  { route: '/api/_nuxt_icon/:collection', handler: _ko3aeq, lazy: false, middleware: false, method: undefined },
+  { route: '/_ipx/**', handler: _AFqVZE, lazy: false, middleware: false, method: undefined },
+  { route: '/**', handler: _lazy_e8oSOK, lazy: true, middleware: false, method: undefined }
 ];
 
 function createNitroApp() {
@@ -6855,5 +5826,5 @@ trapUnhandledNodeErrors();
 setupGracefulShutdown(listener, nitroApp);
 const nodeServer = {};
 
-export { $fetch$1 as $, joinURL as A, getContext as B, withQuery as C, withTrailingSlash as D, withoutTrailingSlash as E, isScriptProtocol as F, sanitizeStatusCode as G, withLeadingSlash as H, parseURL as I, baseURL as J, createHooks as K, executeAsync as L, toRouteMatcher as M, createRouter$1 as N, getRequestURL as O, getCookie as P, getRequestHeader as Q, createDefu as R, parsePath as S, setCookie as T, deleteCookie as U, encodeParam as V, encodePath as W, isEqual$1 as X, nodeServer as Y, appRootTag as a, buildAssetsURL as b, appRootAttrs as c, appSpaLoaderTag as d, appSpaLoaderAttrs as e, getResponseStatus as f, getResponseStatusText as g, appId as h, defineRenderHandler as i, appTeleportTag as j, appTeleportAttrs as k, getQuery as l, createError$1 as m, appHead as n, destr as o, publicAssetsURL as p, getRouteRules as q, useNitroApp as r, serialize$1 as s, defu as t, useRuntimeConfig as u, defuFn as v, klona as w, isEqual as x, parseQuery as y, hasProtocol as z };
+export { $fetch$1 as $, parseURL as A, baseURL as B, createHooks as C, executeAsync as D, toRouteMatcher as E, createRouter$1 as F, encodeParam as G, encodePath as H, nodeServer as I, getResponseStatus as a, buildAssetsURL as b, getQuery as c, defineRenderHandler as d, createError$1 as e, destr as f, getResponseStatusText as g, getRouteRules as h, useNitroApp as i, defu as j, defuFn as k, klona as l, parseQuery as m, isEqual as n, hasProtocol as o, publicAssetsURL as p, joinURL as q, getContext as r, serialize$1 as s, withTrailingSlash as t, useRuntimeConfig as u, withoutTrailingSlash as v, withQuery as w, isScriptProtocol as x, sanitizeStatusCode as y, withLeadingSlash as z };
 //# sourceMappingURL=nitro.mjs.map

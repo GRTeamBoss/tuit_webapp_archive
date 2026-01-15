@@ -14,11 +14,11 @@ import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
-import 'vue-router';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
 import 'ipx';
+import 'vue-router';
 import 'tailwindcss/colors';
 import '@iconify/vue';
 import 'tailwind-variants';
@@ -503,4 +503,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=_slug_-BUqaphXp.mjs.map
+//# sourceMappingURL=_slug_-DwneMMjx.mjs.map

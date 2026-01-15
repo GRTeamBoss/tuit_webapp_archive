@@ -12,11 +12,11 @@ import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
-import 'vue-router';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
 import 'ipx';
+import 'vue-router';
 import 'tailwindcss/colors';
 import '@iconify/vue';
 import '@vueuse/core';
@@ -65,4 +65,4 @@ _sfc_main.setup = (props, ctx) => {
 const index = /* @__PURE__ */ _export_sfc(_sfc_main, [["ssrRender", _sfc_ssrRender]]);
 
 export { index as default };
-//# sourceMappingURL=index-BEiRSGmA.mjs.map
+//# sourceMappingURL=index-DsDTPApR.mjs.map

@@ -1,5 +1,5 @@
 import { _ as _sfc_main$3, a as _sfc_main$2$1, b as _sfc_main$4 } from './PageSection-Dq2HFK-8.mjs';
-import { _ as _sfc_main$5 } from './NavigationMenu-CxeNosdr.mjs';
+import { _ as _sfc_main$5 } from './NavigationMenu-1dMkt1qq.mjs';
 import { defineComponent, withAsyncContext, ref, withCtx, unref, createVNode, mergeProps, toDisplayString, createTextVNode, createBlock, openBlock, Fragment, renderList, computed, renderSlot, useSSRContext } from 'vue';
 import { ssrRenderComponent, ssrRenderList, ssrInterpolate, ssrRenderSlot } from 'vue/server-renderer';
 import { Primitive } from 'reka-ui';
@@ -14,13 +14,13 @@ import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
-import 'vue-router';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
 import 'ipx';
 import '@vueuse/core';
 import 'reka-ui/namespaced';
+import 'vue-router';
 import 'tailwindcss/colors';
 import '@iconify/vue';
 import 'tailwind-variants';
@@ -641,4 +641,4 @@ _sfc_main.setup = (props, ctx) => {
 const index = /* @__PURE__ */ _export_sfc(_sfc_main, [["ssrRender", _sfc_ssrRender]]);
 
 export { index as default };
-//# sourceMappingURL=index-KRURhTiY.mjs.map
+//# sourceMappingURL=index-r8dHxyne.mjs.map
