@@ -2,11 +2,10 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
+    '@nuxt/ui',
     '@nuxt/hints',
     '@nuxt/image',
     '@nuxt/scripts',
-    '@nuxtjs/i18n',
-    '@nuxt/ui'
   ],
   css: ['~/assets/css/main.css'],
   routeRules: {

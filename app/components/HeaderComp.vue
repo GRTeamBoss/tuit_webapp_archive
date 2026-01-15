@@ -9,11 +9,6 @@
         :fuse="{ resultLimit: 42 }"
         @update:search-term="setBooks($event)"
       />
-      <ULocaleSelect
-        :model-value="locale"
-        :locales="[en, ru, uz]"
-        @update:model-value="setLocale($event)"
-      />
       <UColorModeSwitch />
     </template>
     <UNavigationMenu :items="items" variant="pill" />
@@ -30,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-import { en, ru, uz } from "@nuxt/ui/locale";
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const books = ref([
@@ -67,6 +61,4 @@ const items: NavigationMenuItem[] = ref<NavigationMenuItem[][]>([
     },
   ],
 ]);
-
-const { locale, setLocale } = useI18n();
 </script>
