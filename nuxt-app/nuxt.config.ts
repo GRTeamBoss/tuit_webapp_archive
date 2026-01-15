@@ -16,7 +16,6 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   i18n: {
-    serverRoutePrefix: false,
     defaultDirection: "ltr",
     defaultLocale: "en",
     prefix_except_default: false,
