@@ -8,19 +8,10 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxtjs/i18n'
   ],
-  nitro: {
-    preset: 'netlify-builder'
-  },
-  $production: {
-    routeRules: {
-      '/**': { isr: true},
-    }
-  },
-  ssr: false,
-  devtools: {
-    enabled: false,
-  },
   css: ['~/assets/css/main.css'],
+  routeRules: {
+    '/': { prerender: true }
+  },
   i18n: {
     defaultDirection: "ltr",
     defaultLocale: "en",
@@ -36,9 +27,6 @@ export default defineNuxtConfig({
         name: 'Uzbek'
       }
     ]
-  },
-  routeRules: {
-    '/': { prerender: true }
   },
 
   compatibilityDate: '2025-01-15',
